@@ -248,11 +248,16 @@ export default function GameBoard() {
         setTimeSpentSeconds(elapsedSeconds);
       }
 
-      const maxHintIndex = Math.max(puzzle.hints.length - 1, 0);
-      const nextHintIndex = Math.min(updatedGuesses.length, maxHintIndex);
-
       setGuesses(updatedGuesses);
-      setCurrentHintIndex(nextHintIndex);
+
+      const maxHintIndex = Math.max(puzzle.hints.length - 1, 0);
+      const nextHintIndex = evaluation.feedback !== 'correct'
+        ? Math.min(updatedGuesses.length, maxHintIndex)
+        : currentHintIndex;
+
+      if (evaluation.feedback !== 'correct') {
+        setCurrentHintIndex(nextHintIndex);
+      }
 
       setStatusTone(toneMap[evaluation.feedback]);
       setStatusMessage(evaluation.explanation);
@@ -277,7 +282,6 @@ export default function GameBoard() {
 
       if (completed) {
         const won = evaluation.feedback === 'correct';
-        setGameState(won ? 'won' : 'lost');
 
         setStatsLoading(true);
         const updatedStats = await updateUserStats(userId, {
@@ -293,6 +297,10 @@ export default function GameBoard() {
         } else {
           await loadStats(userId);
         }
+
+        setTimeout(() => {
+          setGameState(won ? 'won' : 'lost');
+        }, 100);
       }
     } catch (error) {
       console.error('Failed to process guess:', error);

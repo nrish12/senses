@@ -9,8 +9,8 @@ export interface GuessFeedback {
   explanation: string;
 }
 
-const STRONG_MATCH_THRESHOLD = 0.82;
-const WEAK_MATCH_THRESHOLD = 0.68;
+const STRONG_MATCH_THRESHOLD = 0.75;
+const WEAK_MATCH_THRESHOLD = 0.60;
 
 export function evaluateGuess(
   guess: string,
@@ -88,7 +88,7 @@ export function evaluateGuess(
       feedback: 'close',
       similarity: bestSimilarity,
       matchType: 'fuzzy',
-      explanation: `Very close! Your guess is about ${Math.round(bestSimilarity * 100)}% similar to the answer.`
+      explanation: 'Very close! You\'re almost there—think of similar sensations.'
     };
   }
 
@@ -98,7 +98,7 @@ export function evaluateGuess(
       feedback: 'close',
       similarity: bestSimilarity,
       matchType: 'fuzzy',
-      explanation: `Good progress—your guess shares a lot with the answer (${Math.round(bestSimilarity * 100)}% similar).`
+      explanation: 'Getting warmer! Your guess is related to the answer.'
     };
   }
 
