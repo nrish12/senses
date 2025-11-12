@@ -68,10 +68,10 @@ export default function GameBoard() {
 
   const handleForceNewPuzzle = () => {
     setLoading(true);
+    setPuzzle(null);
     setGameState('playing');
-    setTimeout(() => {
-      void loadTodayPuzzle();
-    }, 10);
+    setGuesses([]);
+    void loadTodayPuzzle();
   };
 
   useEffect(() => {
