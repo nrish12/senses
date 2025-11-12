@@ -17,19 +17,28 @@ export default function DevTools({ onForceNewPuzzle }: DevToolsProps) {
     setTimeout(() => setMessage(''), 3000);
   };
 
+  const getTodayDate = () => {
+    const devDate = localStorage.getItem('dev_puzzle_date');
+    if (devDate) return devDate;
+    return new Date().toISOString().split('T')[0];
+  };
+
   const handleClearProgress = async () => {
     if (!confirm('Clear your progress for today? This will reset guesses and hints.')) return;
 
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      const userId = localStorage.getItem('sense_user_id');
+      if (!userId) {
+        showMessage('No user ID found');
+        return;
+      }
 
-      const today = new Date().toISOString().split('T')[0];
+      const today = getTodayDate();
       const { error } = await supabase
         .from('user_progress')
         .delete()
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .eq('puzzle_date', today);
 
       if (error) throw error;
@@ -44,17 +53,27 @@ export default function DevTools({ onForceNewPuzzle }: DevToolsProps) {
     }
   };
 
+  const handleForceRefresh = () => {
+    showMessage('Forcing puzzle reload...');
+    setTimeout(() => {
+      onForceNewPuzzle();
+    }, 100);
+  };
+
   const handleResetAllStats = async () => {
     if (!confirm('Reset ALL stats? This will delete your entire game history and cannot be undone!')) return;
     if (!confirm('Are you REALLY sure? This is permanent!')) return;
 
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      const userId = localStorage.getItem('sense_user_id');
+      if (!userId) {
+        showMessage('No user ID found');
+        return;
+      }
 
-      await supabase.from('user_progress').delete().eq('user_id', user.id);
-      await supabase.from('user_stats').delete().eq('user_id', user.id);
+      await supabase.from('user_progress').delete().eq('user_id', userId);
+      await supabase.from('user_stats').delete().eq('user_id', userId);
 
       showMessage('All stats reset!');
       onForceNewPuzzle();
@@ -67,20 +86,10 @@ export default function DevTools({ onForceNewPuzzle }: DevToolsProps) {
   };
 
   const handleJumpToDate = async () => {
-    if (!confirm(`Jump to puzzle for ${selectedDate}? This will clear today's progress.`)) return;
+    if (!confirm(`Jump to puzzle for ${selectedDate}?`)) return;
 
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const today = new Date().toISOString().split('T')[0];
-      await supabase
-        .from('user_progress')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('puzzle_date', today);
-
       localStorage.setItem('dev_puzzle_date', selectedDate);
       showMessage(`Jumped to ${selectedDate}`);
       onForceNewPuzzle();
@@ -102,16 +111,20 @@ export default function DevTools({ onForceNewPuzzle }: DevToolsProps) {
   const handleViewDatabase = async () => {
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      const userId = localStorage.getItem('sense_user_id');
+      if (!userId) {
+        showMessage('No user ID found');
+        return;
+      }
 
       const [progress, stats, puzzles] = await Promise.all([
-        supabase.from('user_progress').select('*').eq('user_id', user.id),
-        supabase.from('user_stats').select('*').eq('user_id', user.id),
+        supabase.from('user_progress').select('*').eq('user_id', userId),
+        supabase.from('user_stats').select('*').eq('user_id', userId),
         supabase.from('daily_puzzles').select('*').order('date', { ascending: false }).limit(10)
       ]);
 
       console.log('=== DATABASE STATE ===');
+      console.log('User ID:', userId);
       console.log('User Progress:', progress.data);
       console.log('User Stats:', stats.data);
       console.log('Recent Puzzles:', puzzles.data);
@@ -160,6 +173,15 @@ export default function DevTools({ onForceNewPuzzle }: DevToolsProps) {
       )}
 
       <div className="space-y-2">
+        <button
+          onClick={handleForceRefresh}
+          disabled={loading}
+          className="w-full flex items-center gap-2 px-3 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition-colors disabled:opacity-50 text-sm font-semibold"
+        >
+          <RefreshCw className="w-4 h-4" />
+          Force Reload Puzzle
+        </button>
+
         <button
           onClick={handleClearProgress}
           disabled={loading}
