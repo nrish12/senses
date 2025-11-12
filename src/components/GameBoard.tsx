@@ -61,12 +61,18 @@ export default function GameBoard() {
   const firstGuessAtRef = useRef<string | null>(null);
   const lastGuessAtRef = useRef<string | null>(null);
   const timeSpentRef = useRef<number>(0);
+  const skipLoadProgressRef = useRef<boolean>(false);
 
   useEffect(() => {
     void loadTodayPuzzle();
   }, []);
 
-  const handleForceNewPuzzle = () => {
+  const handleForceNewPuzzle = (skipProgress = false) => {
+    console.log('[GameBoard] handleForceNewPuzzle called, current gameState:', gameState, 'skipProgress:', skipProgress);
+
+    // Set flag to skip loading progress if requested
+    skipLoadProgressRef.current = skipProgress;
+
     // Reset all state immediately to ensure clean slate
     setLoading(true);
     setPuzzle(null);
@@ -79,8 +85,11 @@ export default function GameBoard() {
     lastGuessAtRef.current = null;
     timeSpentRef.current = 0;
 
+    console.log('[GameBoard] State reset complete, will reload puzzle');
+
     // Small delay to ensure state updates, then reload
     setTimeout(() => {
+      console.log('[GameBoard] Calling loadTodayPuzzle');
       void loadTodayPuzzle();
     }, 10);
   };
@@ -95,11 +104,14 @@ export default function GameBoard() {
   }, [statusMessage]);
 
   async function loadTodayPuzzle() {
+    console.log('[GameBoard] loadTodayPuzzle starting');
     setLoading(true);
     resetSessionState();
     const today = getTodayDate();
     const userId = getUserId();
     userIdRef.current = userId;
+
+    console.log('[GameBoard] Loading puzzle for date:', today, 'userId:', userId);
 
     try {
       const { data: puzzleData, error: puzzleError } = await supabase
@@ -111,7 +123,7 @@ export default function GameBoard() {
       if (puzzleError) {
         console.error('Error loading puzzle:', puzzleError);
         setStatusTone('error');
-        setStatusMessage('We could not load today’s sense. Please refresh and try again.');
+        setStatusMessage('We could not load today\'s sense. Please refresh and try again.');
         setPuzzle(null);
         return;
       }
@@ -124,12 +136,15 @@ export default function GameBoard() {
       }
 
       const resolvedPuzzle = puzzleData as DailyPuzzle;
+      console.log('[GameBoard] Puzzle loaded:', resolvedPuzzle.answer);
       setPuzzle(resolvedPuzzle);
 
       await Promise.all([
         loadProgress(userId, today, resolvedPuzzle),
         loadStats(userId)
       ]);
+
+      console.log('[GameBoard] loadTodayPuzzle complete');
     } catch (error) {
       console.error('Failed to initialise puzzle:', error);
       setStatusTone('error');
@@ -140,6 +155,16 @@ export default function GameBoard() {
   }
 
   async function loadProgress(userId: string, date: string, puzzleData: DailyPuzzle) {
+    console.log('[GameBoard] loadProgress starting for date:', date, 'skipLoadProgress:', skipLoadProgressRef.current);
+
+    // If we're skipping progress (e.g., after a forced reset), just reset and return
+    if (skipLoadProgressRef.current) {
+      console.log('[GameBoard] Skipping progress load as requested');
+      skipLoadProgressRef.current = false; // Reset the flag
+      resetSessionState();
+      return;
+    }
+
     const { data: progressData, error } = await supabase
       .from('user_progress')
       .select('*')
@@ -156,11 +181,17 @@ export default function GameBoard() {
     }
 
     if (!progressData) {
+      console.log('[GameBoard] No progress found - starting fresh');
       resetSessionState();
       return;
     }
 
     const progress = progressData as UserProgress;
+    console.log('[GameBoard] Progress found:', {
+      completed: progress.completed,
+      attempts: progress.attempts,
+      guesses: progress.guesses
+    });
     const feedbackRecords = progress.guess_feedback ?? [];
 
     const storedGuesses: GuessFeedback[] = Array.isArray(feedbackRecords) && feedbackRecords.length > 0
@@ -187,8 +218,10 @@ export default function GameBoard() {
 
     if (progress.completed) {
       const won = storedGuesses.some(g => g.feedback === 'correct');
+      console.log('[GameBoard] Progress was completed, setting gameState to:', won ? 'won' : 'lost');
       setGameState(won ? 'won' : 'lost');
     } else {
+      console.log('[GameBoard] Progress not completed, setting gameState to: playing');
       setGameState('playing');
     }
   }

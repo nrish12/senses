@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { getTodayDate } from '../lib/gameLogic';
 
 interface DevToolsProps {
-  onForceNewPuzzle: () => void;
+  onForceNewPuzzle: (skipProgress?: boolean) => void;
 }
 
 export default function DevTools({ onForceNewPuzzle }: DevToolsProps) {
@@ -19,19 +19,24 @@ export default function DevTools({ onForceNewPuzzle }: DevToolsProps) {
   };
 
   const handleClearProgress = async () => {
-    if (!confirm('Clear your progress for today? This will reset guesses and hints.')) return;
+    console.log('[DevTools] handleClearProgress called');
+    if (!confirm('Clear your progress for today? This will reset guesses and hints.')) {
+      console.log('[DevTools] User cancelled clear progress');
+      return;
+    }
 
     setLoading(true);
     try {
       const userId = localStorage.getItem('sense_user_id');
       if (!userId) {
+        console.error('[DevTools] No user ID found');
         showMessage('No user ID found');
         setLoading(false);
         return;
       }
 
       const today = getTodayDate();
-      console.log('Clearing progress for:', { userId, date: today });
+      console.log('[DevTools] Clearing progress for:', { userId, date: today });
 
       const { error, count } = await supabase
         .from('user_progress')
@@ -41,21 +46,23 @@ export default function DevTools({ onForceNewPuzzle }: DevToolsProps) {
         .select();
 
       if (error) {
-        console.error('Delete error:', error);
+        console.error('[DevTools] Delete error:', error);
         throw error;
       }
 
-      console.log('Deleted rows:', count);
+      console.log('[DevTools] Successfully deleted rows:', count);
       showMessage('Progress cleared! Reloading...');
 
       // Always call onForceNewPuzzle regardless of whether anything was deleted
-      // This ensures the game resets even if there was no progress to delete
+      // Pass skipProgress=true to avoid loading the just-deleted progress from database
       setTimeout(() => {
+        console.log('[DevTools] About to call onForceNewPuzzle with skipProgress=true');
         setLoading(false);
-        onForceNewPuzzle();
+        onForceNewPuzzle(true);
+        console.log('[DevTools] onForceNewPuzzle called');
       }, 100);
     } catch (error) {
-      console.error('Error clearing progress:', error);
+      console.error('[DevTools] Error clearing progress:', error);
       showMessage('Failed to clear progress');
       setLoading(false);
     }
