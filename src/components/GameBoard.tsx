@@ -67,7 +67,11 @@ export default function GameBoard() {
   }, []);
 
   const handleForceNewPuzzle = () => {
-    void loadTodayPuzzle();
+    setLoading(true);
+    setGameState('playing');
+    setTimeout(() => {
+      void loadTodayPuzzle();
+    }, 10);
   };
 
   useEffect(() => {
