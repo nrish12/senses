@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Settings, X, RotateCcw, Calendar, Trash2, Database, RefreshCw, Shuffle, ChevronRight, ChevronLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { getTodayDate } from '../lib/gameLogic';
 
 interface DevToolsProps {
   onForceNewPuzzle: () => void;
@@ -17,12 +18,6 @@ export default function DevTools({ onForceNewPuzzle }: DevToolsProps) {
     setTimeout(() => setMessage(''), 3000);
   };
 
-  const getTodayDate = () => {
-    const devDate = localStorage.getItem('dev_puzzle_date');
-    if (devDate) return devDate;
-    return new Date().toISOString().split('T')[0];
-  };
-
   const handleClearProgress = async () => {
     if (!confirm('Clear your progress for today? This will reset guesses and hints.')) return;
 
@@ -31,24 +26,37 @@ export default function DevTools({ onForceNewPuzzle }: DevToolsProps) {
       const userId = localStorage.getItem('sense_user_id');
       if (!userId) {
         showMessage('No user ID found');
+        setLoading(false);
         return;
       }
 
       const today = getTodayDate();
-      const { error } = await supabase
+      console.log('Clearing progress for:', { userId, date: today });
+
+      const { error, count } = await supabase
         .from('user_progress')
         .delete()
         .eq('user_id', userId)
-        .eq('puzzle_date', today);
+        .eq('puzzle_date', today)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Delete error:', error);
+        throw error;
+      }
 
-      showMessage('Progress cleared!');
-      onForceNewPuzzle();
+      console.log('Deleted rows:', count);
+      showMessage('Progress cleared! Reloading...');
+
+      // Always call onForceNewPuzzle regardless of whether anything was deleted
+      // This ensures the game resets even if there was no progress to delete
+      setTimeout(() => {
+        setLoading(false);
+        onForceNewPuzzle();
+      }, 100);
     } catch (error) {
       console.error('Error clearing progress:', error);
       showMessage('Failed to clear progress');
-    } finally {
       setLoading(false);
     }
   };
