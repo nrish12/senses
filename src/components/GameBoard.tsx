@@ -81,6 +81,7 @@ export default function GameBoard() {
 
   async function loadTodayPuzzle() {
     setLoading(true);
+    resetSessionState();
     const today = getTodayDate();
     const userId = getUserId();
     userIdRef.current = userId;
