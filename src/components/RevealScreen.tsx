@@ -4,6 +4,7 @@ import { DailyPuzzle, UserStats } from '../lib/supabase';
 import { GuessFeedback, generateShareText, formatDuration } from '../lib/gameLogic';
 import Header from './Header';
 import GameStats from './GameStats';
+import DevTools from './DevTools';
 
 interface RevealScreenProps {
   puzzle: DailyPuzzle;
@@ -13,6 +14,7 @@ interface RevealScreenProps {
   timeSpentSeconds: number;
   stats: UserStats | null;
   statsLoading: boolean;
+  onForceNewPuzzle: () => void;
 }
 
 const categoryEmojis = {
@@ -28,7 +30,8 @@ export default function RevealScreen({
   attempts,
   timeSpentSeconds,
   stats,
-  statsLoading
+  statsLoading,
+  onForceNewPuzzle
 }: RevealScreenProps) {
   const [copied, setCopied] = useState(false);
 
@@ -119,6 +122,7 @@ export default function RevealScreen({
             </div>
         </div>
       </div>
+      <DevTools onForceNewPuzzle={onForceNewPuzzle} />
     </div>
   );
 }

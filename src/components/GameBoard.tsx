@@ -385,6 +385,7 @@ export default function GameBoard() {
         timeSpentSeconds={timeSpentSeconds}
         stats={userStats}
         statsLoading={statsLoading}
+        onForceNewPuzzle={handleForceNewPuzzle}
       />
     );
   }
