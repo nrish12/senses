@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Settings, X, RotateCcw, Calendar, Trash2, Database, RefreshCw } from 'lucide-react';
+import { Settings, X, RotateCcw, Calendar, Trash2, Database, RefreshCw, Shuffle, ChevronRight, ChevronLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 interface DevToolsProps {
@@ -58,6 +58,53 @@ export default function DevTools({ onForceNewPuzzle }: DevToolsProps) {
     setTimeout(() => {
       onForceNewPuzzle();
     }, 100);
+  };
+
+  const handleGetRandomPuzzle = async () => {
+    setLoading(true);
+    try {
+      const { data: puzzles, error } = await supabase
+        .from('daily_puzzles')
+        .select('date')
+        .order('date', { ascending: false });
+
+      if (error) throw error;
+
+      if (!puzzles || puzzles.length === 0) {
+        showMessage('No puzzles available');
+        return;
+      }
+
+      const randomPuzzle = puzzles[Math.floor(Math.random() * puzzles.length)];
+      localStorage.setItem('dev_puzzle_date', randomPuzzle.date);
+      showMessage(`Loading puzzle from ${randomPuzzle.date}`);
+      onForceNewPuzzle();
+    } catch (error) {
+      console.error('Error getting random puzzle:', error);
+      showMessage('Failed to get random puzzle');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNextPuzzle = () => {
+    const currentDate = getTodayDate();
+    const date = new Date(currentDate);
+    date.setDate(date.getDate() + 1);
+    const nextDate = date.toISOString().split('T')[0];
+    localStorage.setItem('dev_puzzle_date', nextDate);
+    showMessage(`Jumping to ${nextDate}`);
+    onForceNewPuzzle();
+  };
+
+  const handlePreviousPuzzle = () => {
+    const currentDate = getTodayDate();
+    const date = new Date(currentDate);
+    date.setDate(date.getDate() - 1);
+    const prevDate = date.toISOString().split('T')[0];
+    localStorage.setItem('dev_puzzle_date', prevDate);
+    showMessage(`Jumping to ${prevDate}`);
+    onForceNewPuzzle();
   };
 
   const handleResetAllStats = async () => {
@@ -173,14 +220,35 @@ export default function DevTools({ onForceNewPuzzle }: DevToolsProps) {
       )}
 
       <div className="space-y-2">
-        <button
-          onClick={handleForceRefresh}
-          disabled={loading}
-          className="w-full flex items-center gap-2 px-3 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition-colors disabled:opacity-50 text-sm font-semibold"
-        >
-          <RefreshCw className="w-4 h-4" />
-          Force Reload Puzzle
-        </button>
+        <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-3 rounded-lg border border-purple-200">
+          <p className="text-xs font-semibold text-purple-700 mb-2">Test Different Puzzles</p>
+          <button
+            onClick={handleGetRandomPuzzle}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg transition-colors disabled:opacity-50 text-sm font-bold mb-2"
+          >
+            <Shuffle className="w-4 h-4" />
+            Random Puzzle
+          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handlePreviousPuzzle}
+              disabled={loading}
+              className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors disabled:opacity-50 text-sm"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Previous
+            </button>
+            <button
+              onClick={handleNextPuzzle}
+              disabled={loading}
+              className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors disabled:opacity-50 text-sm"
+            >
+              Next
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
 
         <button
           onClick={handleClearProgress}
@@ -222,7 +290,7 @@ export default function DevTools({ onForceNewPuzzle }: DevToolsProps) {
         <button
           onClick={handleViewDatabase}
           disabled={loading}
-          className="w-full flex items-center gap-2 px-3 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors disabled:opacity-50 text-sm"
+          className="w-full flex items-center gap-2 px-3 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors disabled:opacity-50 text-sm"
         >
           <Database className="w-4 h-4" />
           View Database (Console)
@@ -243,9 +311,9 @@ export default function DevTools({ onForceNewPuzzle }: DevToolsProps) {
       <div className="mt-4 pt-3 border-t text-xs text-gray-500">
         <p className="mb-1"><strong>Tips:</strong></p>
         <ul className="space-y-0.5 list-disc list-inside">
-          <li>Clear progress to retry today's puzzle</li>
-          <li>Jump to any date to test specific puzzles</li>
-          <li>Check console for detailed database info</li>
+          <li>Use Random/Next/Previous to test different puzzles</li>
+          <li>Clear progress to retry current puzzle</li>
+          <li>Reset to Today to return to actual date</li>
         </ul>
       </div>
     </div>
