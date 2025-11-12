@@ -19,6 +19,7 @@ import GuessList from './GuessList';
 import RevealScreen from './RevealScreen';
 import Header from './Header';
 import GameStats from './GameStats';
+import DevTools from './DevTools';
 
 const MAX_ATTEMPTS = 6;
 
@@ -64,6 +65,10 @@ export default function GameBoard() {
   useEffect(() => {
     void loadTodayPuzzle();
   }, []);
+
+  const handleForceNewPuzzle = () => {
+    void loadTodayPuzzle();
+  };
 
   useEffect(() => {
     if (!statusMessage) {
@@ -443,6 +448,7 @@ export default function GameBoard() {
           </div>
         </div>
       </div>
+      <DevTools onForceNewPuzzle={handleForceNewPuzzle} />
     </div>
   );
 }

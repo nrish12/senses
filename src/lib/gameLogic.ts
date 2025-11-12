@@ -242,6 +242,10 @@ export function getUserId(): string {
 }
 
 export function getTodayDate(): string {
+  const devDate = localStorage.getItem('dev_puzzle_date');
+  if (devDate) {
+    return devDate;
+  }
   return new Date().toISOString().split('T')[0];
 }
 
