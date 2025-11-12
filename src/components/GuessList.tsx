@@ -29,34 +29,30 @@ export default function GuessList({ guesses }: GuessListProps) {
   if (guesses.length === 0) return null;
 
   return (
-    <div className="space-y-4 mt-6">
+    <div className="space-y-2">
+      <h3 className="text-sm font-semibold text-gray-700 mb-2">Your Guesses</h3>
       {guesses.map((guess, index) => (
         <div
           key={index}
-          className={`px-6 py-4 rounded-xl border-2 ${
+          className={`px-3 py-2 rounded-lg border ${
             feedbackStyles[guess.feedback]
           } transition-all`}
         >
-          <div className="flex items-start justify-between gap-6">
-            <div className="flex-1">
-              <span className="font-semibold text-lg capitalize">{guess.guess}</span>
-              {guess.explanation && (
-                <p className="text-sm text-gray-700 mt-1">{guess.explanation}</p>
-              )}
-              <div className="mt-2 flex flex-wrap gap-2 text-xs text-gray-600">
-                {guess.matchType !== 'none' && matchTypeLabels[guess.matchType] && (
-                  <span className="inline-flex items-center rounded-full bg-white/70 px-3 py-1 border border-white/60">
-                    {matchTypeLabels[guess.matchType]}
-                  </span>
-                )}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-sm capitalize truncate">{guess.guess}</span>
                 {guess.similarity > 0 && (
-                  <span className="inline-flex items-center rounded-full bg-white/70 px-3 py-1 border border-white/60">
-                    {Math.round(guess.similarity * 100)}% similar
+                  <span className="text-xs text-gray-600 whitespace-nowrap">
+                    {Math.round(guess.similarity * 100)}%
                   </span>
                 )}
               </div>
+              {guess.explanation && (
+                <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{guess.explanation}</p>
+              )}
             </div>
-            <span className="text-sm font-semibold uppercase tracking-wider whitespace-nowrap">
+            <span className="text-xs font-semibold uppercase tracking-wider whitespace-nowrap">
               {feedbackLabels[guess.feedback]}
             </span>
           </div>

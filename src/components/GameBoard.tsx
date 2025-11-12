@@ -392,49 +392,56 @@ export default function GameBoard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50">
       <Header />
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
-        <div className="mb-6">
+      <div className="container mx-auto px-4 py-4 max-w-4xl">
+        <div className="mb-3">
           <GameStats stats={userStats} loading={statsLoading} />
         </div>
-        <div className="mb-8">
-          <div className="flex justify-center gap-2 mb-6">
-            {Array.from({ length: MAX_ATTEMPTS }).map((_, i) => (
-              <div
-                key={i}
-                className={`w-3 h-3 rounded-full ${
-                  i < guesses.length
-                    ? guesses[i].feedback === 'correct'
-                      ? 'bg-green-500'
-                      : guesses[i].feedback === 'close'
-                      ? 'bg-yellow-500'
-                      : 'bg-gray-400'
-                    : 'bg-gray-200'
-                }`}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-3">
+          <div>
+            <div className="flex justify-center gap-2 mb-3">
+              {Array.from({ length: MAX_ATTEMPTS }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`w-3 h-3 rounded-full ${
+                    i < guesses.length
+                      ? guesses[i].feedback === 'correct'
+                        ? 'bg-green-500'
+                        : guesses[i].feedback === 'close'
+                        ? 'bg-yellow-500'
+                        : 'bg-gray-400'
+                      : 'bg-gray-200'
+                  }`}
+                />
+              ))}
+            </div>
+
+            <HintCard
+              hint={currentHint}
+              category={puzzle.category}
+              hintNumber={safeHintIndex + 1}
+              totalHints={totalHints}
+            />
+
+            {statusMessage && (
+              <div className={`mt-3 px-3 py-2 rounded-xl border text-sm ${statusToneClasses[statusTone]} shadow-sm`}>
+                {statusMessage}
+              </div>
+            )}
+
+            <div className="mt-3">
+              <GuessInput
+                onGuess={handleGuess}
+                disabled={guesses.length >= MAX_ATTEMPTS || isSubmitting}
+                isSubmitting={isSubmitting}
               />
-            ))}
+            </div>
           </div>
 
-          <HintCard
-            hint={currentHint}
-            category={puzzle.category}
-            hintNumber={safeHintIndex + 1}
-            totalHints={totalHints}
-          />
+          <div className="lg:max-h-[calc(100vh-200px)] lg:overflow-y-auto">
+            <GuessList guesses={guesses} />
+          </div>
         </div>
-
-        {statusMessage && (
-          <div className={`mb-6 px-4 py-3 rounded-xl border ${statusToneClasses[statusTone]} shadow-sm`}>
-            {statusMessage}
-          </div>
-        )}
-
-        <GuessList guesses={guesses} />
-
-        <GuessInput
-          onGuess={handleGuess}
-          disabled={guesses.length >= MAX_ATTEMPTS || isSubmitting}
-          isSubmitting={isSubmitting}
-        />
       </div>
     </div>
   );

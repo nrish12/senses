@@ -82,6 +82,31 @@ export function evaluateGuess(
 
   const bestSimilarity = Math.max(answerSimilarity, synonymSimilarity);
 
+  const containsAnswer = normalizedGuess.includes(normalizedAnswer) || normalizedAnswer.includes(normalizedGuess);
+  const containsSynonym = normalizedSynonyms.some(syn =>
+    normalizedGuess.includes(syn) || syn.includes(normalizedGuess)
+  );
+
+  if (containsAnswer && bestSimilarity < 0.8) {
+    return {
+      guess: rawGuess,
+      feedback: 'close',
+      similarity: 0.85,
+      matchType: 'substring',
+      explanation: 'You are very close to the answer—almost there!'
+    };
+  }
+
+  if (containsSynonym && bestSimilarity < 0.8) {
+    return {
+      guess: rawGuess,
+      feedback: 'close',
+      similarity: 0.8,
+      matchType: 'substring',
+      explanation: 'Your guess is very related to the answer!'
+    };
+  }
+
   if (bestSimilarity >= STRONG_MATCH_THRESHOLD) {
     return {
       guess: rawGuess,
@@ -154,8 +179,7 @@ export function formatDuration(totalSeconds: number): string {
 function normalizeText(value: string): string {
   return stripDiacritics(value)
     .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, ' ')
+    .replace(/[^a-z0-9]/g, '')
     .trim();
 }
 
