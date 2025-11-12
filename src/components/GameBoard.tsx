@@ -67,11 +67,22 @@ export default function GameBoard() {
   }, []);
 
   const handleForceNewPuzzle = () => {
+    // Reset all state immediately to ensure clean slate
     setLoading(true);
     setPuzzle(null);
     setGameState('playing');
     setGuesses([]);
-    void loadTodayPuzzle();
+    setCurrentHintIndex(0);
+    setStatusMessage(null);
+    setTimeSpentSeconds(0);
+    firstGuessAtRef.current = null;
+    lastGuessAtRef.current = null;
+    timeSpentRef.current = 0;
+
+    // Small delay to ensure state updates, then reload
+    setTimeout(() => {
+      void loadTodayPuzzle();
+    }, 10);
   };
 
   useEffect(() => {
